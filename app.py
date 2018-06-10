@@ -121,9 +121,9 @@ traces.append(go.Scatter(
 app = dash.Dash()
 
 app.layout = html.Div([
-    html.H1(children='Welcome to Interactive Clustering Application data'),
+    html.H2(children='Welcome to Interactive Clustering Application data'),
 
-    html.H3("Input data", style={'float':'center'}),
+    html.H5("Input data", style={'float':'center'}),
 
     dcc.Upload(
         id='upload-data',
@@ -145,10 +145,11 @@ app.layout = html.Div([
         multiple=True
     ),
     html.Div(id='output-data-upload'),
-    html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'}),
+    html.H4(dt.DataTable(rows=[{}]), style={'display': 'none'}),
     
     html.H3("Detrital Geochronology Clustering App", style={'float':'center'}),
-    
+    html.H4("", style={'float':'center'}),
+    html.H5("Clustering Value", style={'float':'center'}),
     html.Div([
         dcc.Slider(
             id='slider',
@@ -160,6 +161,8 @@ app.layout = html.Div([
             
         )],
     style={'width': '60%','display': 'inline-block'}),
+    
+    html.H2("", style={'float':'center'}),
     
     html.Div([        
             dcc.Graph(id='graph-with-slider')
