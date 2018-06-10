@@ -20,7 +20,6 @@ from scipy.stats import norm
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output
 
-
 df = pd.read_csv('data/Xu_et_al_2016_dataset.xlsx')
 df = df.rename(columns=lambda x: x.strip())
 lats=list(df.iloc[0].values)
@@ -29,11 +28,11 @@ sample_names=list(df)
 
 # ============== back end python ===================
 def build_KDE(ages,bw,max_age_roundup):
-    
+
     ages = np.array(ages[~np.isnan(ages)]) #remove nans and convert to array
     x_range = np.arange(0,max_age_roundup,1) #sampled every 1 spacing
     KDE_bandwidths = [bw for i in ages] # set bandwidth for each age
-    
+
     sum_pdf = x_range-x_range
     for i in range(len(ages)):
         sum_pdf = sum_pdf + norm.pdf(x=x_range,loc=ages[i],scale=KDE_bandwidths[i])
@@ -52,12 +51,12 @@ for col in df:
 def calc_stat(x,y,stat):
     x = np.array(x)
     y = np.array(y)
-    
+
     if stat=='likeness':
         M = abs(x-y)
         s = sum(M)/2
         return s
-    
+
     if stat=='similarity':
         if np.array_equal(x,y):
             s = 0
@@ -65,19 +64,19 @@ def calc_stat(x,y,stat):
             S = np.sqrt(x*y)
             s = 1-sum(S)
         return s
-        
+
     if stat=='R2':
         xmean = np.mean(x)
         ymean = np.mean(y)
         xcov = np.zeros(len(x))
         ycov = np.zeros(len(y))
-        
+
         for i in range(len(x)):
             xcov[i] = x[i] - xmean
         for i in range(len(x)):
             ycov[i] = y[i] - ymean
         numerator = sum(xcov*ycov)
-        
+
         sumxcov2 = sum(xcov*xcov)
         sumycov2 = sum(ycov*ycov)
         mult2 = sumxcov2*sumycov2
@@ -120,59 +119,130 @@ traces.append(go.Scatter(
 
 app = dash.Dash()
 
+# Boostrap CSS.
+app.css.append_css({'external_url': 'https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css'})
+
+html_center = 'left'
+
+# Main Div
 app.layout = html.Div([
-    html.H2(children='Welcome to Interactive Clustering Application data'),
 
-    html.H5("Input data", style={'float':'center'}),
-
-    dcc.Upload(
-        id='upload-data',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    ),
-    html.Div(id='output-data-upload'),
-    html.H4(dt.DataTable(rows=[{}]), style={'display': 'none'}),
-    
-    html.H3("Detrital Geochronology Clustering App", style={'float':'center'}),
-    html.H4("", style={'float':'center'}),
-    html.H5("Clustering Value", style={'float':'center'}),
     html.Div([
-        dcc.Slider(
-            id='slider',
-            min=2,
-            max=8,
-            value=4,
-            step=None,
-            marks={str(year): str(year) for year in range(2,9)},
-            
-        )],
-    style={'width': '60%','display': 'inline-block'}),
-    
-    html.H2("", style={'float':'center'}),
-    
-    html.Div([        
-            dcc.Graph(id='graph-with-slider')
-    ]),
-    
-    html.Div([        
+    # Title
+    html.Div([
+        html.H1(children='Geochrono Cluster Fu...n!', style={'text-align':html_center})
+    ], className='ten columns'),
+
+    html.Div([
+        html.H3(children='Welcome to an interactive clustering web application for geochronological data', style={'text-align':html_center})
+    ], className='ten columns'),
+
+    html.Div([
+        html.H5(children="Step one: Import the data", style={'text-align':html_center}),
+    ], className='ten columns'),
+
+    # Import data
+    html.Div([
+        dcc.Upload(
+            id='upload-data',
+            children=html.Div([
+                'Drag and Drop or ',
+                html.A('Select Files')
+            ]),
+            style={
+                'width': '100%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px',
+                'textAlign': 'center',
+                'margin': '10px'
+            },
+            # Allow multiple files to be uploaded
+            multiple=True
+        )
+    ], className='ten columns'),
+
+    # Data info
+    html.Div(id='output-data-upload', className='ten columns'),
+
+    # Table
+    html.Div([
+        html.H4(dt.DataTable(rows=[{}]), style={'display': 'none'})
+    ], className='ten columns'),
+
+    #
+    html.Div([
+        html.H3("Detrital Geochronology Clustering App", style={'text-align':html_center})
+    ], className='ten columns'),
+
+    # html.Div([
+    #     html.H4("", style={'float':'center'})
+    # ], className='ten columns'),
+
+    #
+    # html.Div([
+    #     html.H5("Clustering Value", style={'text-align':html_center}),
+    # ], className='ten columns', style={'transform': 'rotate(90deg)'}),
+
+    # html.Div([
+    #     html.H2("", style={'float':'center'})
+    # ], className='ten columns'),
+
+    ], className='row', style={'border-style': 'solid'}),
+
+    #
+    html.Div([
+        html.Div([
+                dcc.Graph(id='graph-with-slider',
+                    figure=go.Figure(
+                        data=[go.Scattermapbox(lat=[], lon=[])],
+                        layout=go.Layout(
+                            height=500,
+                            mapbox=dict(
+                                accesstoken=('pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'),
+                                # center=dict(
+                                #     lat=np.mean(30),
+                                #     lon=np.mean(40)
+                                # ),
+                                zoom=4,
+                            ),
+                            hovermode='closest',
+                            margin=dict(r=10, t=10, l=10, b=10)
+                        )
+                    )
+                )
+        ], className='ten columns', style={'height': '500'}),
+
+        # Slider
+        html.Div([
+            dcc.Slider(
+                id='slider',
+                min=2,
+                max=8,
+                step=None,
+                marks={str(year): str(year) for year in range(2,9)},
+                vertical=True,
+            )
+        ], className='one columns', style={'margin-top': '50', 'margin-bottom': '50', 'height': '400'}),
+
+        #
+        html.Div([
+            html.P("Clustering Value", style={'text-align':'center'}),
+        ], className='one columns', style={'margin-top': '200', 'height': '500', 'width': '100', 'border-style': 'none'}),#, 'transform': 'rotate(90deg)'}),
+
+    ], className='row', style={'border-style': 'solid'}),
+
+    html.Div([
             dcc.Graph(id='qc_kde_plot')
-    ]),
-    
-])
+    ], className='ten columns'),
+
+], className='ten columns offset-by-one')
+
+# ---------------
+# End of html
+# ---------------
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -210,6 +280,11 @@ def parse_contents(contents, filename, date):
         })
     ])
 
+# ---------------------------------
+# Callbacks
+# ---------------------------------
+
+# Upload data
 @app.callback(Output('output-data-upload', 'children'),
               [Input('upload-data', 'contents'),
                Input('upload-data', 'filename'),
@@ -220,7 +295,8 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
-    
+
+# Map
 @app.callback(
     dash.dependencies.Output('graph-with-slider', 'figure'),
     [dash.dependencies.Input('slider', 'value')])
@@ -250,11 +326,11 @@ def update_figure(k):
                     zoom=4,
             ),
             hovermode='closest',
-            margin=dict( r=50, t=30, l=50, b=0 )
+            margin=dict(r=10, t=10, l=10, b=10)
         )
     }
 
-
+# Histogram?
 @app.callback(
     dash.dependencies.Output('qc_kde_plot', 'figure'),
     [dash.dependencies.Input('graph-with-slider', 'selectedData')])
@@ -276,13 +352,12 @@ def update_figure(selectedData):
     return {
             'data':traces,
             'layout': go.Layout(
-            margin={'l': 50, 'b': 0, 't': 20, 'r': 50},
+            margin={'l': 10, 'b': 10, 't': 10, 'r': 10},
             hovermode='closest')
     }
-    
 
-app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"})
-app.css.append_css({"external_url": "//fonts.googleapis.com/css?family=Dosis:Medium"})
+#app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"})
+#app.css.append_css({"external_url": "//fonts.googleapis.com/css?family=Dosis:Medium"})
 #external_css = ["//fonts.googleapis.com/css?family=Dosis:Medium"]
 
 if __name__ == '__main__':
