@@ -20,6 +20,8 @@ from scipy.stats import norm
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output
 
+from textwrap import dedent
+
 df = pd.read_csv('data/Xu_et_al_2016_dataset.xlsx')
 df = df.rename(columns=lambda x: x.strip())
 lats=list(df.iloc[0].values)
@@ -123,6 +125,8 @@ app = dash.Dash()
 app.css.append_css({'external_url': 'https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css'})
 
 html_center = 'left'
+# html_border = 'solid'
+html_border = 'none'
 
 # Main Div
 app.layout = html.Div([
@@ -134,12 +138,21 @@ app.layout = html.Div([
     ], className='ten columns'),
 
     html.Div([
-        html.H3(children='Welcome to an interactive clustering web application for geochronological data', style={'text-align':html_center})
+        html.H3(children='Welcome to an interactive clustering web application for geochronological data. The purpose of this application is to track similaties in rock stories. The provided data should present the distribution of measured ages on rock samples picked up on the field.', style={'text-align':html_center, 'color':'darkblue'})
     ], className='ten columns'),
 
     html.Div([
-        html.H5(children="Step one: Import the data", style={'text-align':html_center}),
+        html.H4(children="Step one: Import the data. The CSV file must be formatted as:", style={'text-align':html_center}),
     ], className='ten columns'),
+
+    html.Div([
+        dcc.Markdown(dedent('''
+            * One column per sample
+            * first row: latitude
+            * second row: longitudes
+            * next rows: ages distribution property
+           ''')),
+   ], className='ten columns'),
 
     # Import data
     html.Div([
@@ -162,7 +175,7 @@ app.layout = html.Div([
             # Allow multiple files to be uploaded
             multiple=True
         )
-    ], className='ten columns'),
+    ], className='twelve columns'),
 
     # Data info
     html.Div(id='output-data-upload', className='ten columns'),
@@ -174,8 +187,20 @@ app.layout = html.Div([
 
     #
     html.Div([
-        html.H3("Detrital Geochronology Clustering App", style={'text-align':html_center})
+        html.H4("Step two: Detrital Geochronology Clustering", style={'text-align':html_center})
     ], className='ten columns'),
+
+    html.Div([
+       html.H5(children="Setup the clustering informations", style={'text-align':html_center}),
+       dcc.RadioItems(
+       options=[
+           {'label': 'Similarity maps', 'value':'SiMap'},
+           {'label': 'Principal Component Analysis', 'value': 'PCA'},
+           {'label': 'Machine Learning', 'value': 'ML'}
+       ],
+       value='MTL'
+       )
+   ], className='six columns'),
 
     # html.Div([
     #     html.H4("", style={'float':'center'})
@@ -190,16 +215,16 @@ app.layout = html.Div([
     #     html.H2("", style={'float':'center'})
     # ], className='ten columns'),
 
-    ], className='row', style={'border-style': 'solid'}),
+    ], className='row', style={'border-style': html_border}),
 
-    #
-    html.Div([
+    # Row with map and slider
+    # html.Div([
         html.Div([
                 dcc.Graph(id='graph-with-slider',
                     figure=go.Figure(
                         data=[go.Scattermapbox(lat=[], lon=[])],
                         layout=go.Layout(
-                            height=500,
+                            height=400,
                             mapbox=dict(
                                 accesstoken=('pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'),
                                 # center=dict(
@@ -213,7 +238,7 @@ app.layout = html.Div([
                         )
                     )
                 )
-        ], className='ten columns', style={'height': '500'}),
+        ], className='ten columns', style={'border-style': html_border, 'height': '400'}),
 
         # Slider
         html.Div([
@@ -225,17 +250,39 @@ app.layout = html.Div([
                 marks={str(year): str(year) for year in range(2,9)},
                 vertical=True,
             )
-        ], className='one columns', style={'margin-top': '50', 'margin-bottom': '50', 'height': '400'}),
+        ], className='two columns', style={'border-style': html_border, 'margin-top': '25', 'margin-bottom': '25', 'height': '300'}),
 
         #
         html.Div([
             html.P("Clustering Value", style={'text-align':'center'}),
-        ], className='one columns', style={'margin-top': '200', 'height': '500', 'width': '100', 'border-style': 'none'}),#, 'transform': 'rotate(90deg)'}),
+        ], className='two columns', style={'margin-top': '0', 'height': '50', 'border-style': 'none'}),#, 'transform': 'rotate(90deg)'}),
 
-    ], className='row', style={'border-style': 'solid'}),
+    # ], className='row', style={'border-style': html_border, 'border-color': 'red'}),
 
     html.Div([
-            dcc.Graph(id='qc_kde_plot')
+        html.H4("Step three: Age Density Distribution", style={'text-align':html_center})
+    ], className='ten columns'),
+
+    html.Div([
+        dcc.Graph(id='qc_kde_plot',
+                  figure=go.Figure(
+                      data=[],
+                      layout=go.Layout(
+                          height=400,
+                          margin=dict(r=10, t=10, l=10, b=10),
+                          hovermode='closest',
+                          xaxis=dict(title='Age'),
+                          yaxis=dict(title='Density')),
+                      )
+                  )
+             ], className='ten columns'),
+
+    html.Div([
+        html.H4("Step four: Party!", style={'text-align':html_center})
+    ], className='ten columns'),
+
+    html.Div([
+        html.H4("Making your geoclustering less f...ed", style={'text-align':html_center})
     ], className='ten columns'),
 
 ], className='ten columns offset-by-one')
@@ -307,26 +354,32 @@ def update_figure(k):
                                n_clusters=k)
     m = model.fit(diss)
 
+    c= ['hsl('+str(h)+',50%'+',50%)' for h in np.linspace(0, 360, k)]
+    c = [c[i] for i in m.labels_]
+
     return {
         'data': [{
-            'lat': lats, 'lon': longs, 'text': sample_names, 'type': 'scattermapbox',
-            'mode':'markers', 'marker':dict(size=15,
-                                            line = dict(width=10,color='black'),
-                                            color=m.labels_,
-                                            colorscale = COLORSCALE,
-                                            opacity = 0.9)
-        }],
+           'lat': lats,
+           'lon': longs,
+           'text': sample_names,
+           'type': 'scattermapbox',
+           'customdata': c,
+           'mode':'markers', 'marker':dict(size=15,
+                                           line = dict(width=10,color='black'),
+                                           color=c,
+                                           opacity = 0.9)
+                                           }],
         'layout': go.Layout(
-            height=500,
-            mapbox=dict(
-                    accesstoken=('pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'),
-                    center=dict(
-                        lat=np.mean(lats),
-                        lon=np.mean(longs)),
-                    zoom=4,
-            ),
-            hovermode='closest',
-            margin=dict(r=10, t=10, l=10, b=10)
+           height=400,
+           mapbox=dict(
+                   accesstoken=('pk.eyJ1IjoiYWxpc2hvYmVpcmkiLCJhIjoiY2ozYnM3YTUxMDAxeDMzcGNjbmZyMmplZiJ9.ZjmQ0C2MNs1AzEBC_Syadg'),
+                   center=dict(
+                       lat=np.mean(lats),
+                       lon=np.mean(longs)),
+                   zoom=4,
+           ),
+           hovermode='closest',
+           margin=dict(r=10, t=10, l=10, b=10)
         )
     }
 
@@ -335,25 +388,44 @@ def update_figure(k):
     dash.dependencies.Output('qc_kde_plot', 'figure'),
     [dash.dependencies.Input('graph-with-slider', 'selectedData')])
 def update_figure(selectedData):
-    traces=[]
+
+    def color_change(inp):
+        c = inp.split(',')
+        amd = int(c[1][0])+int(9*np.random.rand(1))
+        c[1] = str( str(amd) + c[1][1:] )
+        amd2 = int(c[2][0])+int(5*np.random.rand(1))
+        c[2] = str( str(amd2) + c[2][1:] )
+        return ','.join(c)
+
+    c2 = []
+    for colors_out in [selectedData['points'][i]['customdata'] for i in range(len(selectedData['points']))]:
+        c2.append(color_change(colors_out))
+
+    traces = []
+    numerator = 0
     for samp_name in [selectedData['points'][i]['text'] for i in range(len(selectedData['points']))]:
         ys = list(KDE_df[samp_name])
         xs = list(range(len(KDE_df)))
         traces.append(go.Scatter(
-                name=samp_name,
-                hovertext=samp_name,
-                x=xs,
-                y=ys,
-                mode='lines',
-                line = dict(
-                        width=3
-                        )
-                ))
+            name=samp_name,
+            hovertext=samp_name,
+            x=xs,
+            y=ys,
+            mode='lines',
+            line = dict(
+                width=2.5,
+                color = c2[numerator]
+                )
+            ))
+        numerator = numerator + 1
+
     return {
             'data':traces,
             'layout': go.Layout(
-            margin={'l': 10, 'b': 10, 't': 10, 'r': 10},
-            hovermode='closest')
+            margin={'l': 50, 'b': 50, 't': 50, 'r': 50},
+            hovermode='closest',
+            xaxis=dict(title='Age'),
+            yaxis=dict(title='Density')),
     }
 
 #app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"})
