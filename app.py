@@ -191,12 +191,12 @@ app.layout = html.Div([
     ], className='ten columns'),
 
     html.Div([
-       html.H5(children="Setup the clustering informations", style={'text-align':html_center}),
+       html.H5(children="Setup the clustering informations. WIP!", style={'text-align':html_center}),
        dcc.RadioItems(
        options=[
-           {'label': 'Similarity maps', 'value':'SiMap'},
+           {'label': 'Agglomerative Clustering', 'value':'SiMap'},
            {'label': 'Principal Component Analysis', 'value': 'PCA'},
-           {'label': 'Machine Learning', 'value': 'ML'}
+           {'label': 'K-means', 'value': 'ML'}
        ],
        value='MTL'
        )
@@ -218,7 +218,7 @@ app.layout = html.Div([
     ], className='row', style={'border-style': html_border}),
 
     # Row with map and slider
-    # html.Div([
+    html.Div([
         html.Div([
                 dcc.Graph(id='graph-with-slider',
                     figure=go.Figure(
@@ -257,7 +257,7 @@ app.layout = html.Div([
             html.P("Clustering Value", style={'text-align':'center'}),
         ], className='two columns', style={'margin-top': '0', 'height': '50', 'border-style': 'none'}),#, 'transform': 'rotate(90deg)'}),
 
-    # ], className='row', style={'border-style': html_border, 'border-color': 'red'}),
+    ], className='row', style={'border-style': html_border, 'border-color': 'red'}),
 
     html.Div([
         html.H4("Step three: Age Density Distribution", style={'text-align':html_center})
@@ -379,7 +379,8 @@ def update_figure(k):
                    zoom=4,
            ),
            hovermode='closest',
-           margin=dict(r=10, t=10, l=10, b=10)
+           margin=dict(r=10, t=10, l=10, b=10),
+           dragmode='select'
         )
     }
 
